@@ -1,0 +1,17 @@
+Package: RapidScore
+Type: Package
+Title: C++ Sequence Scorer
+Version: 0.1.0
+Author: Chaitanya Rastogi
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: GPL
+Encoding: UTF-8
+LazyData: true
+LinkingTo: Rcpp
+Imports: Rcpp
+RoxygenNote: 6.1.0
+NeedsCompilation: yes
+Packaged: 2019-02-07 15:47:04 UTC; chaitanya
+Built: R 3.5.1; x86_64-apple-darwin15.6.0; 2019-02-07 15:47:09 UTC; unix
