@@ -7,13 +7,13 @@
     "folds" : "",
     "hash" : "1392822293",
     "id" : "7DFFF158",
-    "lastKnownWriteTime" : 1549576469,
-    "last_content_update" : 1549576469721,
+    "lastKnownWriteTime" : 1550178467,
+    "last_content_update" : 1550178467,
     "path" : "~/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
     "project_path" : "src/Score.cpp",
     "properties" : {
-        "cursorPosition" : "24,0",
-        "scrollLine" : "0"
+        "cursorPosition" : "98,0",
+        "scrollLine" : "92"
     },
     "relative_order" : 2,
     "source_on_save" : false,

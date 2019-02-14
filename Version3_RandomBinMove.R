@@ -29,11 +29,10 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
   minIters = 10000
   fCrit = .9
   tol = .5
-
+  
   # Convert sequence to base 4 encoding, and define positions to mutate
   seq.len = length(start.seq)
   seq.pos = 1:seq.len
-  nPosSamples = c(rep(1,6), rep(2,3), 3)
   xn = rep(0, seq.len)
   for (i in 1:seq.len) {
     xn[i] = a.to.n.conversion[start.seq[i]]
@@ -57,7 +56,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
   eDivs= ((Emax-Emin)/energy.div.size+1)
   mDivs = MutMax+1
   H = matrix(data = 0, ncol = eDivs, nrow = mDivs)
-  Hidx = 3:mDivs      # Define the range of H indices we want to consider (here it starts from an edit distance of 2)
   S = H
   x0= xn
   E0= En
@@ -67,16 +65,41 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
   opt.seqs$OptimalSeq=list(NA)
   opt.seqs$OptimalCost[1] = E0
   opt.seqs$OptimalSeq[[1]]= x0
-  iters = 0
+  iters = 1
+  # Last visited seq
+  last.seq = vector(mode="list", length = eDivs*mDivs)
   
   # Loop continuously until convergence
   while (TRUE) {
     # Propose a new state with a dinucleotide mutation (type of move does not seem to matter)
-    xn = x0
-    nMuts = sample(nPosSamples, 1)
-    xn[sample(seq.pos, nMuts)] = sample(0:3, nMuts, replace = T)
-    # mutate.pos = sample(seq.pos, 1)
-    # xn[mutate.pos] = sample(0:3, 1)
+    if (iters %% 100 == 0) {
+      while(TRUE) {
+        idx = sample(1:length(last.seq),1)
+        if (!is.null(last.seq[[idx]])) {
+          xn = last.seq[[idx]]
+          break
+        }
+      }
+    } else {
+      xn = x0
+      mutate.pos = sample(seq.pos, 1)
+      xn[mutate.pos] = sample(0:3, 1)
+    }
+    # if (runif(1) <= .01) {
+    #   # Jump to a bin that has been previously visited
+    #   idx = sample(1:length(last.seq), 1)
+    #   if (is.null(last.seq[[idx]])) {
+    #     xn = x0
+    #     mutate.pos = sample(seq.pos, 1)
+    #     xn[mutate.pos] = sample(0:3, 1)
+    #   } else {
+    #     xn = last.seq[[idx]]
+    #   }
+    # } else {
+    #   xn = x0
+    #   mutate.pos = sample(seq.pos, 1)
+    #   xn[mutate.pos] = sample(0:3, 1)
+    # }
     # Compute new cost
     scores = score.object$scoreBulk(xn)
     En = cost.function(scores, base.scores)
@@ -105,7 +128,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
       # Recompute Range and divs
       MutMax = IMn-1
       mDivs = IMn
-      Hidx = 3:mDivs
     }
     # Check cost ranges
     if (IEn<=0 || IEn > eDivs) {
@@ -163,6 +185,7 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         cat("; Restarted sampling!\n")
         next
       }
+      last.seq = vector(mode="list", length = eDivs*mDivs)
     }
     # See if the latest sequence is the best one; if so, update list of sequences
     if (En > opt.seqs$OptimalCost[IMn]) {
@@ -178,6 +201,8 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
       E0 = En
       IE0 = IEn
       IM0 = IMn
+      # Store last accepted sequence
+      last.seq[[(IM0-1)*mDivs+IE0]] = x0
     }
     # Update
     S[IM0, IE0] = S[IM0, IE0] + f
@@ -201,8 +226,7 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
       }
     }
     if (iters %% 250000 ==0) {
-      cat(paste0("Total Iterations: ", iters, "; mean: ", mean(H[H>0]), "; sd: ", sd(H[H>0]), "; min: ", min(H[H>0]), "\n"))
-      print(rowSums(H))
+      cat(paste0("Total Iterations: ", iters, "; mean: ", mean(H[H>0]), "; sd: ", sd(H[H>0]), "; min: ", min(H[H>0]), "; count: ", sum(H>0), "\n"))
       print(apply(H, 1, FUN=function(x) min(x[x>0])))
     }
   }
@@ -236,7 +260,7 @@ optimal.sequence = function(..., model.list = NA, cost.function, seq.len = NA, s
   
   # Create scoring object
   score.object = new(RapidScore)
-
+  
   # Next, load models
   ks = 0
   for (i in 1:nModels) {
@@ -311,7 +335,7 @@ cost.fun = function(scored.list, base.scores) {
 fkh250 = "CCTCGTCCCACAGCTGGCGATTAATCTTGACATTGAG"
 # Loop over all proteins
 output.profiles = list()
-for (i in 1:length(input.models)) {
+for (i in 2:length(input.models)) {
   # Select a single model
   idx = 1:length(input.models)
   idx = c(i, idx[-i])
