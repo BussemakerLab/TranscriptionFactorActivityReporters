@@ -61,6 +61,8 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
   E0= En
   IE0= round((E0-Emin)/energy.div.size)+1
   IM0= 1  # Initial bin for edit distance is 0 
+  S[IM0, IE0] = S[IM0, IE0] + f
+  H[IM0, IE0] = H[IM0, IE0] + 1
   opt.seqs = data.frame(Mutations=MutMin:MutMax, OptimalCost=-Inf)
   opt.seqs$OptimalSeq=list(NA)
   opt.seqs$OptimalCost[1] = E0
@@ -68,11 +70,12 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
   iters = 1
   # Last visited seq
   last.seq = vector(mode="list", length = eDivs*mDivs)
+  last.seq[[(IM0-1)*mDivs+IE0]] = x0
   
   # Loop continuously until convergence
   while (TRUE) {
     # Propose a new state with a dinucleotide mutation (type of move does not seem to matter)
-    if (iters %% 100 == 0) {
+    if (runif(1) <= .01) {
       while(TRUE) {
         idx = sample(1:length(last.seq),1)
         if (!is.null(last.seq[[idx]])) {
@@ -85,21 +88,7 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
       mutate.pos = sample(seq.pos, 1)
       xn[mutate.pos] = sample(0:3, 1)
     }
-    # if (runif(1) <= .01) {
-    #   # Jump to a bin that has been previously visited
-    #   idx = sample(1:length(last.seq), 1)
-    #   if (is.null(last.seq[[idx]])) {
-    #     xn = x0
-    #     mutate.pos = sample(seq.pos, 1)
-    #     xn[mutate.pos] = sample(0:3, 1)
-    #   } else {
-    #     xn = last.seq[[idx]]
-    #   }
-    # } else {
-    #   xn = x0
-    #   mutate.pos = sample(seq.pos, 1)
-    #   xn[mutate.pos] = sample(0:3, 1)
-    # }
+    
     # Compute new cost
     scores = score.object$scoreBulk(xn)
     En = cost.function(scores, base.scores)
