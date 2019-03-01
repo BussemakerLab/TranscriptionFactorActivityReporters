@@ -14,7 +14,7 @@
                 "column" : 7,
                 "file" : "/Users/chaitanya/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
                 "kind" : 2,
-                "line" : 19,
+                "line" : 20,
                 "name" : "RapidScore",
                 "parent_name" : "",
                 "usr" : "c:@C@RapidScore"
@@ -23,7 +23,7 @@
                 "column" : 28,
                 "file" : "/Users/chaitanya/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
                 "kind" : 7,
-                "line" : 69,
+                "line" : 74,
                 "name" : "scoreSeq(Rcpp::IntegerVector)",
                 "parent_name" : "Score",
                 "usr" : "c:@C@Score@F@scoreSeq#$@N@Rcpp@C@Vector>#VI13#@N@Rcpp@CT>1#T@PreserveStorage#"
@@ -32,7 +32,7 @@
                 "column" : 18,
                 "file" : "/Users/chaitanya/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
                 "kind" : 7,
-                "line" : 120,
+                "line" : 131,
                 "name" : "add(Rcpp::NumericVector, Rcpp::Nullable<Rcpp::NumericVector>)",
                 "parent_name" : "RapidScore",
                 "usr" : "c:@C@RapidScore@F@add#$@N@Rcpp@C@Vector>#VI14#@N@Rcpp@CT>1#T@PreserveStorage#$@N@Rcpp@C@Nullable>#S0_#"
@@ -41,7 +41,7 @@
                 "column" : 18,
                 "file" : "/Users/chaitanya/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
                 "kind" : 7,
-                "line" : 131,
+                "line" : 142,
                 "name" : "print",
                 "parent_name" : "RapidScore",
                 "usr" : "c:@C@RapidScore@F@print#"
@@ -50,13 +50,13 @@
                 "column" : 24,
                 "file" : "/Users/chaitanya/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
                 "kind" : 7,
-                "line" : 140,
+                "line" : 151,
                 "name" : "scoreBulk(Rcpp::IntegerVector)",
                 "parent_name" : "RapidScore",
                 "usr" : "c:@C@RapidScore@F@scoreBulk#$@N@Rcpp@C@Vector>#VI13#@N@Rcpp@CT>1#T@PreserveStorage#"
             }
         ],
         "file" : "/Users/chaitanya/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
-        "file_last_write" : 1550178467
+        "file_last_write" : 1551478840
     }
 ]

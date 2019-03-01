@@ -1,5 +1,9 @@
 # Must install RapidScore C++ Library First!
+
+# WARNING: hidden error - once f drops below 1, UNLESS the energy range changes the system will NOT reset the computation - this needs to be explicitly avoided
+
 library(RapidScore)
+library(abind)
 source("~/Documents/Research/SELEX/MultinomialPaper/Submissions/PNAS/Figures/plotting_format.R")
 all.models = load.hox.models()
 
@@ -69,16 +73,17 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
   opt.seqs$OptimalSeq[[1]]= x0
   iters = 1
   # Last visited seq
-  last.seq = vector(mode="list", length = eDivs*mDivs)
+  last.seq = array(dim = c(mDivs, eDivs, seq.len))
+  last.seq[IM0, IE0, ] = x0
   
   # Loop continuously until convergence
   while (TRUE) {
     # Propose a new state with a dinucleotide mutation (type of move does not seem to matter)
     if (runif(1) <= .01) {
       while(TRUE) {
-        idx = sample(1:length(last.seq),1)
-        if (!is.null(last.seq[[idx]])) {
-          xn = last.seq[[idx]]
+        idx = arrayInd(sample(length(H), 1), dim(H))
+        if (sum(is.na(last.seq[idx[1],idx[2],]))==0) {
+          xn = last.seq[idx[1],idx[2],]
           break
         }
       }
@@ -129,7 +134,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
       if (verbose) {
         cat(paste0("New Cost Range: ", Emin.new, ":", Emax.new))
       }
-      cat(paste0("New Cost Range: ", Emin.new, ":", Emax.new, "\n"))
     }
     # Update range and restart wang-landau process if necessary
     if (m.range.update || e.range.update) {
@@ -138,6 +142,7 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         minH = min(H[H>0])
         # Begin by padding the H and S matrices with mutation range increases
         if (m.range.update) {
+          last.seq = abind(last.seq, array(dim=c(mDivs-nrow(H), ncol(H), seq.len)), along = 1)
           H = rbind(H, matrix(data = 0, ncol = ncol(H), nrow = mDivs-nrow(H)))
           S = rbind(S, matrix(data = 0, ncol = ncol(S), nrow = mDivs-nrow(S)))
         }
@@ -145,6 +150,7 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         if (e.range.update) {
           H = cbind(matrix(data = 0, ncol = Emin-Emin.new, nrow = nrow(H)), H, matrix(data = 0, ncol = Emax.new-Emax, nrow = nrow(H)))
           S = cbind(matrix(data = 0, ncol = Emin-Emin.new, nrow = nrow(S)), S, matrix(data = 0, ncol = Emax.new-Emax, nrow = nrow(S)))
+          last.seq = abind(array(dim=c(nrow(H), Emin-Emin.new, seq.len)), last.seq, array(dim=c(nrow(H), Emax.new-Emax, seq.len)), along=2)
           eDivs = ncol(H)
           Emin = Emin.new
           Emax = Emax.new
@@ -153,7 +159,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         if (verbose) {
           cat(paste0("; Total Iterations: ", iters, "; mean: ", mean(H[H>0]), "; sd: ", sd(H[H>0]), "; min: ", minH, "\n"))
         }
-        # print(dim(H))
       } else {
         # Need a hard restart
         if (e.range.update) {
@@ -170,10 +175,13 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         IM0= IMn
         iters = 0
         f = 1
+        S[IM0, IE0] = S[IM0, IE0] + f
+        H[IM0, IE0] = H[IM0, IE0] + 1
+        last.seq = array(dim = c(mDivs, eDivs, seq.len))
+        last.seq[IM0, IE0, ] = x0
         cat("; Restarted sampling!\n")
         next
       }
-      last.seq = vector(mode="list", length = eDivs*mDivs)
     }
     # See if the latest sequence is the best one; if so, update list of sequences
     if (En > opt.seqs$OptimalCost[IMn]) {
@@ -190,16 +198,13 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
       IE0 = IEn
       IM0 = IMn
       # Store last accepted sequence
-      last.seq[[(IM0-1)*mDivs+IE0]] = x0
+      last.seq[IM0, IE0, ] = x0
     }
     # Update
     S[IM0, IE0] = S[IM0, IE0] + f
     H[IM0, IE0] = H[IM0, IE0] + 1
     iters = iters + 1
-    
-    # print(iters)
-    # print(H)
-    
+
     # Ensure that all energy bins have been visited an even number of times
     if (min(H[H>0]) > minCount) {
       if (min(H[H>0]) >= fCrit*mean(H[H>0])) {
@@ -323,7 +328,7 @@ cost.fun = function(scored.list, base.scores) {
 fkh250 = "CCTCGTCCCACAGCTGGCGATTAATCTTGACATTGAG"
 # Loop over all proteins
 output.profiles = list()
-for (i in 2:length(input.models)) {
+for (i in 1:length(input.models)) {
   # Select a single model
   idx = 1:length(input.models)
   idx = c(i, idx[-i])

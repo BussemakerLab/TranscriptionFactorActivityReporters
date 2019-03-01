@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1392822293",
+    "hash" : "869070191",
     "id" : "7DFFF158",
-    "lastKnownWriteTime" : 1550178467,
-    "last_content_update" : 1550178467,
+    "lastKnownWriteTime" : 1551478840,
+    "last_content_update" : 1551478840079,
     "path" : "~/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
     "project_path" : "src/Score.cpp",
     "properties" : {
-        "cursorPosition" : "98,0",
-        "scrollLine" : "92"
+        "cursorPosition" : "24,15",
+        "scrollLine" : "70"
     },
     "relative_order" : 2,
     "source_on_save" : false,

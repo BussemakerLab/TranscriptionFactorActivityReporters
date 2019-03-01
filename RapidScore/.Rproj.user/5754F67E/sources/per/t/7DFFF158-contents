@@ -4,26 +4,29 @@ using namespace std;
 
 class Score{
 public:
-  Score(Rcpp::NumericVector);
-  Score(Rcpp::NumericVector, Rcpp::NumericVector);
+  Score(Rcpp::NumericVector, double);
+  Score(Rcpp::NumericVector, Rcpp::NumericVector, double);
   Rcpp::NumericMatrix scoreSeq(Rcpp::IntegerVector);
   Rcpp::NumericMatrix nuc;
   Rcpp::NumericMatrix dinuc;
   Rcpp::NumericMatrix revNuc;
   Rcpp::NumericMatrix revDinuc;
 private:
-  int k;
   bool isDinuc;
+  int k;
+  double affFloor;
 };
 
 class RapidScore{
 public:
   RapidScore();
+  RapidScore(double);
   void add(Rcpp::NumericVector, Rcpp::Nullable<Rcpp::NumericVector>);
   void print();
   Rcpp::List scoreBulk(Rcpp::IntegerVector);
 private:
   int nModels;
+  double affFloor;
   std::vector<Score> models;
 };
 
@@ -31,7 +34,7 @@ private:
 //*** SCORE CLASS ***
 //*******************
 // Constructors
-Score::Score(Rcpp::NumericVector nucBetas) {
+Score::Score(Rcpp::NumericVector nucBetas, double affinityFloor) {
   Rcpp::Function mat = Rcpp::Environment("package:base")["matrix"];
   if (nucBetas.length() % 4 != 0) {
     Rcpp::stop("Betas improperly defined!");
@@ -40,8 +43,9 @@ Score::Score(Rcpp::NumericVector nucBetas) {
   nuc = mat(nucBetas, 4, k);
   revNuc = mat(rev(nucBetas), 4, k);
   isDinuc = false;
+  affFloor = affinityFloor;
 }
-Score::Score(Rcpp::NumericVector nucBetas, Rcpp::NumericVector dinucBetas) {
+Score::Score(Rcpp::NumericVector nucBetas, Rcpp::NumericVector dinucBetas, double affinityFloor) {
   Rcpp::Function mat = Rcpp::Environment("package:base")["matrix"];
   Rcpp::IntegerVector dinucRevIdx = Rcpp::IntegerVector::create(15,11,7,3,14,10,6,2,13,9,5,1,12,8,4,0);
 
@@ -63,6 +67,7 @@ Score::Score(Rcpp::NumericVector nucBetas, Rcpp::NumericVector dinucBetas) {
     }
   }
   isDinuc = true;
+  affFloor = affinityFloor;
 }
 
 // Function to score sequence
@@ -78,8 +83,8 @@ Rcpp::NumericMatrix Score::scoreSeq(Rcpp::IntegerVector seq){
         fwd += nuc(seq[currWindow+i], i) + dinuc(seq[currWindow+i-1]*4+seq[currWindow+i], i-1);
         rev += revNuc(seq[currWindow+i], i) + revDinuc(seq[currWindow+i-1]*4+seq[currWindow+i], i-1);
       }
-      output(0, currWindow) = fwd;
-      output(1, currWindow) = rev;
+      output(0, currWindow) = max(fwd, affFloor);
+      output(1, currWindow) = max(rev, affFloor);
     }
   } else {
     for (int currWindow=0; currWindow<seq.length()-k+1; currWindow++) {
@@ -89,8 +94,8 @@ Rcpp::NumericMatrix Score::scoreSeq(Rcpp::IntegerVector seq){
         fwd += nuc(seq[currWindow+i], i);
         rev += revNuc(seq[currWindow+i], i);
       }
-      output(0, currWindow) = fwd;
-      output(1, currWindow) = rev;
+      output(0, currWindow) = max(fwd, affFloor);
+      output(1, currWindow) = max(rev, affFloor);
     }
   }
   return(output);
@@ -98,8 +103,8 @@ Rcpp::NumericMatrix Score::scoreSeq(Rcpp::IntegerVector seq){
 
 RCPP_MODULE(scoremodule){
   Rcpp::class_<Score>( "Score" )
-  .constructor<Rcpp::NumericVector>("constructor for nucleotide only model")
-  .constructor<Rcpp::NumericVector, Rcpp::NumericVector>("constructor for dinucleotide model")
+  .constructor<Rcpp::NumericVector, double>("constructor for nucleotide only model")
+  .constructor<Rcpp::NumericVector, Rcpp::NumericVector, double>("constructor for dinucleotide model")
   .method( "scoreSeq", &Score::scoreSeq, "documentation for scoring sequence")
   // .field( "nuc", &Score::nuc, "documentation for nuc")
   // .field( "dinuc", &Score::dinuc, "documentation for nuc")
@@ -114,6 +119,12 @@ RCPP_MODULE(scoremodule){
 // Constructor
 RapidScore::RapidScore(){
   nModels = 0;
+  affFloor = -1E9;
+}
+
+RapidScore::RapidScore(double affinityFloor) {
+  nModels = 0;
+  affFloor = affinityFloor;
 }
 
 // add model function
@@ -122,9 +133,9 @@ void RapidScore::add(Rcpp::NumericVector nucBetas, Rcpp::Nullable<Rcpp::NumericV
   // Handle dinuc betas
   if (dinucBetas.isNotNull()) {
     Rcpp::NumericVector temp(dinucBetas);
-    models.push_back(Score(nucBetas, temp));
+    models.push_back(Score(nucBetas, temp, affFloor));
   } else {
-    models.push_back(Score(nucBetas));
+    models.push_back(Score(nucBetas, affFloor));
   }
 }
 
@@ -150,6 +161,7 @@ Rcpp::List RapidScore::scoreBulk(Rcpp::IntegerVector seq) {
 RCPP_MODULE(rapidscoremodule){
   Rcpp::class_<RapidScore>( "RapidScore" )
   .constructor("documentation for default constructor")
+  .constructor<double>("documentation for constructor that defines the affinity floor")
   .method( "add", &RapidScore::add, "documentation for adding a model")
   .method( "print", &RapidScore::print, "documentation for printing all betas (diagnostic)")
   .method( "scoreBulk", &RapidScore::scoreBulk, "documentation for scoring a sequence using multiple models")
