@@ -1,5 +1,4 @@
 # Must install RapidScore C++ Library First!
-
 library(RapidScore)
 library(abind)
 source("~/Documents/Research/SELEX/MultinomialPaper/Submissions/PNAS/Figures/plotting_format.R")
@@ -8,29 +7,19 @@ all.models = load.hox.models()
 ########################
 ### Define Functions ###
 ########################
-# Convenient barrier function. Height determines strength of penality, sensitivity is how 'square' the 
-# logistic response is, and width is how 'wide' the non-asymptotic regions are
-barrier.func = function(height, sensitivity, width, cost) {
-  # log(1/99) = -4.59512
-  return(height/(1+exp(-4.59512*sensitivity/width*cost)) )
-}
-
 # Base to number
 a.to.n.conversion = c(0:3)
 names(a.to.n.conversion) = c("A","C","G","T")
 n.to.a.conversion = c("A","C","G","T")
 
-# biased 2D wang-landau (looks only for positive mutations) - REMOVE
-wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, verbose=TRUE) {
-  verbose = FALSE
-  isBiased = TRUE
+wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
   # Size of energy divisions and other parameters - play with these?
   energy.div.size = 1
   f = 1
   minCount = 100
   minIters = 1E4
   fCrit = .25
-  tol = .5
+  tol = .9
   
   # Convert sequence to base 4 encoding, and define positions to mutate
   seq.len = length(start.seq)
@@ -60,7 +49,7 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
   # Define bin size
   eDivs= ((Emax-Emin)/energy.div.size+1)
   mDivs = MutMax+1
-  # State variables
+  # State variables; HIdx is a binary matrix storing the indicies of visited bins
   H = matrix(data = 0, ncol = eDivs, nrow = mDivs)
   S = H
   HIdx = H>0
@@ -108,10 +97,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
     # Compute new cost
     scores = score.object$scoreBulk(xn)
     En = cost.function(scores, base.scores)
-    # Biased sampling: Reject if sequence energy is less than the least value TODO: REMOVE!!!
-    if (isBiased && En < Emin) {
-      next
-    }
     # Compute mutation distance; Reverse complement symmetry must be accounted for when computing
     Mn = min(sum(xn!=base.seq), sum(rev(-1*(xn-3))!=base.seq)) 
     # Compute new cost and mutation indexes
@@ -124,9 +109,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
     # Check mutation ranges
     if (IMn > mDivs) {
       m.range.update = TRUE
-      if (verbose) {
-        cat(paste0("Old Max Mutation: ", MutMax, "; New Max Mutation: ", IMn-1, "; "))
-      }
       # Update and add rows to opt.seq
       for (k in (MutMax+1):(IMn-1)) {
         opt.seqs = rbind(opt.seqs, rep(c(k, -Inf, list(NA))))
@@ -138,22 +120,16 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
     # Check cost ranges
     if (IEn<=0 || IEn > eDivs) {
       e.range.update = TRUE
-      if (verbose) {
-        cat(paste0("Old Cost Range: ", Emin, ":", Emax,"; "))
-      }
       # Recompute range and divs
       Emin.new = floor(min(Emin, En)/energy.div.size)*energy.div.size
       Emax.new = ceiling(max(Emax, En)/energy.div.size)*energy.div.size
-      if (verbose) {
-        cat(paste0("New Cost Range: ", Emin.new, ":", Emax.new))
-      }
     }
     # Update range and restart wang-landau process if necessary
     if (m.range.update || e.range.update) {
       # Do not need to restart
       if (f==1) {
         oldHIdx = sum(HIdx)
-        minH = min(H[H>0])
+        minH = min(H[HIdx])
         # Begin by padding the H and S matrices with mutation range increases
         if (m.range.update) {
           last.seq = abind(last.seq, array(dim=c(mDivs-nrow(H), ncol(H), seq.len)), along = 1)
@@ -171,9 +147,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
           Emin = Emin.new
           Emax = Emax.new
           IEn = round((En-Emin)/energy.div.size)+1
-        }
-        if (verbose) {
-          cat(paste0("; Total Iterations: ", iters, "; mean: ", mean(H[H>0]), "; sd: ", sd(H[H>0]), "; min: ", minH, "; oldHIdx: ", oldHIdx, "; newHIdx: ", sum(HIdx), "\n"))
         }
       } else {
         # Need a hard restart, BUT PRESERVE HIdx
@@ -202,9 +175,10 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         HIdx[IM0, IE0] = TRUE
         last.seq = array(dim = c(mDivs, eDivs, seq.len))
         last.seq[IM0, IE0, ] = x0
-        cat(paste0("prevHIdx: ", sum(prevHIdx), "; HIdx: ", sum(HIdx), ": "))
+        if (verbose) {
+          cat("Energy Ranges Updated - Restarted sampling!\n")
+        }
         prevHIdx = NA
-        cat("Energy Ranges Updated - Restarted sampling!\n")
         next
       }
     }
@@ -233,7 +207,10 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
     
     # Monitoring
     if (iters %% 250000 ==0) {
-      cat(paste0("Total Iterations: ", iters, "; mean: ", mean(H[HIdx]), "; sd: ", sd(H[HIdx]), "; min: ", min(H[HIdx]), "; active bins: ", sum(HIdx), "; # Zero Bins: ", sum(H[HIdx]==0), "\n"))
+      if (verbose) {
+        cat(paste0("Total Iterations: ", iters, "; mean: ", mean(H[HIdx]), "; sd: ", sd(H[HIdx]), "; min: ", 
+                   min(H[HIdx]), "; active bins: ", sum(HIdx), "; # Zero Bins: ", sum(H[HIdx]==0), "; Emin-Emax: ", Emin,"-",Emax,"\n"))
+      }
       # If the number of active bins changes after f goes below 1, need to restart sampling
       if (f<1 && sum(!(which(HIdx) %in% which(prevHIdx)))>0) {
         # NOTE: The ranges of H and S DO NOT change here; its that a new 'bin' has opened up 
@@ -242,7 +219,6 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         H = matrix(data = 0, ncol = eDivs, nrow = mDivs)
         S = H
         # HIdx now needs to contain a merged value - This is important! Ensures that all bins are tracked
-        cat(paste0("prevHIdx: ", sum(prevHIdx), "; HIdx: ", sum(HIdx), " new Idxes: ", sum(!(which(HIdx) %in% which(prevHIdx))), ": "))
         HIdx = HIdx | prevHIdx
         # Reset the last visited seq array
         last.seq = array(dim = c(mDivs, eDivs, seq.len))
@@ -255,14 +231,18 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
         H[IM0, IE0] = H[IM0, IE0] + 1
         HIdx[IM0, IE0] = TRUE
         iters = 1
-        cat("New active bins detected - Restarted Sampling!\n")
+        if (verbose) {
+          cat("New active bins detected - Restarted Sampling!\n")
+        }
       }
     }
-    
+  
     # Ensure that all energy bins have been visited an even number of times
     if (f<1 && min(H[prevHIdx]) > minCount && min(H[prevHIdx]) >= tol*mean(H[prevHIdx]) && iters>minIters) {
-      cat(paste0("Flatness criteria reached for f = ",f," in ",iters," iterations. "))
-      cat(paste0("Total Active Bins: ", sum(HIdx), "; Previous Round Total Active Bins: ", sum(prevHIdx), "\n"))
+      if (verbose) {
+        cat(paste0("Flatness criteria reached for f = ",f," in ",iters," iterations. Total Active Bins: ",
+                   sum(HIdx), "; Previous Round Total Active Bins: ", sum(prevHIdx), "\n"))
+      }
       f = f/2;
       # Ensure that the opt cost is stable before exiting
       if (f<=fCrit && !is.na(prevOptCost) && sum(prevOptCost!=opt.seqs$OptimalCost)==0) {
@@ -281,8 +261,10 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
       HIdx[IM0, IE0] = TRUE
       iters = 1;
     } else if (f==1 && min(H[HIdx]) > minCount && min(H[HIdx]) >= tol*mean(H[HIdx]) && iters>minIters) {
-      cat(paste0("Flatness criteria reached for f = 1 in ",iters," iterations. "))
-      cat(paste0("Total Active Bins: ", sum(HIdx), "; Previous Round Total Active Bins: ", sum(prevHIdx), "\n"))
+      if (verbose) {
+        cat(paste0("Flatness criteria reached for f = 1 in ",iters," iterations. Total Active Bins: ", 
+                   sum(HIdx), "; Previous Round Total Active Bins: ", sum(prevHIdx), "\n"))
+      }
       f = f/2;
       # Store this round's optimal cost and active bin indices
       prevOptCost = opt.seqs$OptimalCost
@@ -317,7 +299,7 @@ wang.landau = function(score.object, start.seq, cost.function, isBiased=TRUE, ve
 }
 
 # Sequence optimizer. REQUIRES a seed sequence. All scores are automatically adjusted to accomodate the TOTAL sequence score
-optimal.sequence = function(..., model.list = NA, cost.function, seq.len = NA, seed.seq, verbose = FALSE) {
+optimal.sequence = function(..., model.list = NA, cost.function, seq.len = NA, seed.seq, affinity.cutoff = 1E-5, verbose = FALSE) {
   if (is.na(model.list)) {
     input.models = list(...)
   } else {
@@ -326,7 +308,7 @@ optimal.sequence = function(..., model.list = NA, cost.function, seq.len = NA, s
   nModels = length(input.models)
   
   # Create scoring object
-  score.object = new(RapidScore)
+  score.object = new(RapidScore, log(affinity.cutoff))
   
   # Next, load models
   ks = 0
@@ -360,7 +342,7 @@ optimal.sequence = function(..., model.list = NA, cost.function, seq.len = NA, s
   # Optimize using wang-landau sampling. Construct starting sequence
   start.seq = c(sample(c("A","C","G","T"), l.len, replace = TRUE), seed.seq, sample(c("A","C","G","T"), r.len, replace = TRUE))
   # Run optimization
-  output = wang.landau(score.object, start.seq, cost.function, isBiased = TRUE, verbose = verbose)
+  output = wang.landau(score.object, start.seq, cost.function, verbose = verbose)
   return(output)
 }
 
@@ -372,10 +354,13 @@ input.models = all.models[[2]][[2]]
 model.names = as.character(all.models[[1]]$Protein)
 model.names[all.models[[1]]$Dataset=="Dimer"] = paste0("Exd", model.names[all.models[[1]]$Dataset=="Dimer"])
 names(input.models) = model.names
+# Need to adjust the energy scale of all models so that the energy of the maximum sequence is 0. This allows setting a 'nonspecific binding' limit
 for (i in 1:length(input.models)) {
   if (all.models[[1]]$Dataset[i]=="Dimer" || i %in% c(17, 18)) {
     input.models[[i]] = input.models[[i]][[1]]
   }
+  energy.adjustment = log(max.seq(all.models[[2]], i, 1)$MaxAffinity)
+  input.models[[i]]$NB[1:4] = input.models[[i]]$NB[1:4] - energy.adjustment
 }
 
 # evaluate all sequences and create plots
@@ -387,16 +372,35 @@ genome.profile = function(sequence) {
   }
 }
 
-# simple cost function: Maintain/improve the affinity of the first protein, drop the affinity of the rest
 cost.fun = function(scored.list, base.scores) {
-  cost = log(sum(exp(scored.list[[1]]))/sum(exp(base.scores[[1]]))) - 
-    barrier.func(50, 1, exp(max(scored.list[[1]]))/10, 
-                 .85*exp(max(base.scores[[1]]))-exp(max(scored.list[[1]])))
-  for (i in 2:length(scored.list)) {
-    cost = cost + log(sum(exp(base.scores[[i]]))/sum(exp(scored.list[[i]])))
+  top.aff.prot1 = exp(max(scored.list[[1]])-max(base.scores[[1]]))
+  
+  # Important to keep the affinity of the first protein the same
+  cost = 0
+  if (top.aff.prot1>=1) {
+    cost = 20 + log(sum(exp(scored.list[[1]]))/sum(exp(base.scores[[1]])))
+  } else {
+    cost = cost - log10(sum(exp(base.scores[[1]]))/sum(exp(scored.list[[1]])))*10
   }
-  return(cost)
+  for (i in 2:length(scored.list)) {
+    score.ratio = sum(exp(base.scores[[i]]))/sum(exp(scored.list[[i]]))
+    if (score.ratio<1) {
+      cost = cost - 10
+    } else {
+      cost = cost + min(3, log10(score.ratio))
+    }
+  }
+  return(max(cost, 0))
 }
+
+# # simple cost function: Maintain/improve the affinity of the first protein, drop the affinity of the rest
+# cost.fun = function(scored.list, base.scores) {
+#   cost = log(sum(exp(scored.list[[1]]))/sum(exp(base.scores[[1]])))
+#   for (i in 2:length(scored.list)) {
+#     cost = cost + log(sum(exp(base.scores[[i]]))/sum(exp(scored.list[[i]])))
+#   }
+#   return(cost)
+# }
 
 # Optimize the fkh250 sequence
 fkh250 = "CCTCGTCCCACAGCTGGCGATTAATCTTGACATTGAG"
@@ -408,29 +412,5 @@ for (i in 1:length(input.models)) {
   idx = c(i, idx[-i])
   curr.list = input.models[idx]
   cat(paste0("Optimizing ", names(curr.list)[1], ":\n"))
-  out = optimal.sequence(model.list = curr.list, cost.function = cost.fun, seed.seq = fkh250, verbose = TRUE)
-  output.profiles = c(output.profiles, out)
-}
-
-# Now compute final affinities 
-max.affinity = matrix(data = 0, nrow = length(input.models), ncol=length(final.seqs))
-tot.affinity = matrix(data = 0, nrow = length(input.models), ncol=length(final.seqs))
-for (i in 1:length(final.seqs)) {
-  for (j in 1:length(input.models)) {
-    p = score.genome(genomicSequence = DNAString(final.seqs[i]), fits = all.models[[2]], index = j, mode = 1)
-    p = p/max.seq(fits = all.models[[2]], index=j, mode=1)$MaxAffinity
-    max.affinity[j,i] = max(p)
-    tot.affinity[j,i] = sum(p)
-  }
-}
-
-max.affinity.p = matrix(data = 0, nrow = length(input.models), ncol=length(final.seqs.p))
-tot.affinity.p = matrix(data = 0, nrow = length(input.models), ncol=length(final.seqs.p))
-for (i in 1:length(final.seqs.p)) {
-  for (j in 1:length(input.models)) {
-    p = score.genome(genomicSequence = DNAString(final.seqs.p[i]), fits = all.models[[2]], index = j, mode = 1)
-    p = p/max.seq(fits = all.models[[2]], index=j, mode=1)$MaxAffinity
-    max.affinity.p[j,i] = max(p)
-    tot.affinity.p[j,i] = sum(p)
-  }
+  output.profiles[[i]] = optimal.sequence(model.list = curr.list, cost.function = cost.fun, seed.seq = fkh250, verbose = TRUE)
 }
