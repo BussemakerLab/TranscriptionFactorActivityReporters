@@ -21,6 +21,7 @@ class RapidScore{
 public:
   RapidScore();
   RapidScore(double);
+  void setAffFloor(double);
   void add(Rcpp::NumericVector, Rcpp::Nullable<Rcpp::NumericVector>);
   void print();
   Rcpp::List scoreBulk(Rcpp::IntegerVector);
@@ -127,6 +128,10 @@ RapidScore::RapidScore(double affinityFloor) {
   affFloor = affinityFloor;
 }
 
+void RapidScore::setAffFloor(double affinityFloor) {
+  affFloor = affinityFloor;
+}
+
 // add model function
 void RapidScore::add(Rcpp::NumericVector nucBetas, Rcpp::Nullable<Rcpp::NumericVector> dinucBetas = R_NilValue) {
   nModels++;
@@ -162,6 +167,7 @@ RCPP_MODULE(rapidscoremodule){
   Rcpp::class_<RapidScore>( "RapidScore" )
   .constructor("documentation for default constructor")
   .constructor<double>("documentation for constructor that defines the affinity floor")
+  .method( "setAffFloor", &RapidScore::setAffFloor, "Alternative method for setting the affinity floor")
   .method( "add", &RapidScore::add, "documentation for adding a model")
   .method( "print", &RapidScore::print, "documentation for printing all betas (diagnostic)")
   .method( "scoreBulk", &RapidScore::scoreBulk, "documentation for scoring a sequence using multiple models")

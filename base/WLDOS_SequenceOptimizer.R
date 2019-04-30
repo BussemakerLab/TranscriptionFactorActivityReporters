@@ -1,8 +1,6 @@
 # Must install RapidScore C++ Library First!
 library(RapidScore)
 library(abind)
-source("~/Documents/Research/SELEX/MultinomialPaper/Submissions/PNAS/Figures/plotting_format.R")
-all.models = load.hox.models()
 
 ########################
 ### Define Functions ###
@@ -46,6 +44,7 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
   globalIterations = 0
   nWalkers = 20
   testIterations = 2.5E3
+  acceptanceRate = .002
   maxHits = 5
   
   # Convert sequence to base 4 encoding, and define positions to mutate
@@ -78,12 +77,12 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
   S = array(dim = c(mDivs, eDivs, nWalkers), data=0)
   HIdx = matrix(data = FALSE, ncol = eDivs, nrow = mDivs)   # This does not need to 'split up' amongst walkers
   last.seq = array(dim = c(mDivs, eDivs, seq.len))          # Last visited seq array
-
+  
   # List of optimal sequences by mutational distance
   opt.seqs = data.frame(Mutations=MutMin:MutMax, OptimalCost=-Inf)
   opt.seqs$OptimalSeq=list(NA)
   opt.seqs$OptimalCost[1] = E0
-  opt.seqs$OptimalSeq[[1]]= x0
+  opt.seqs$OptimalSeq[[1]]= x0[1,]
   
   # Monitor previous cycles (is this needed??)
   prevOptCost = NA
@@ -116,10 +115,10 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
       for (v in 1:testIterations) {
         # Propose a new state with a nucleotide mutation. On special steps, move to a 
         # bin with fewer visits (hopefully). This biased move needs to be compensated
-        if (hit.counter>=maxHits && runif(1) <= 0.002) {   # TODO: does this rate need to scale with sequence length?
+        if (hit.counter>=maxHits && runif(1) <= acceptanceRate) {   # TODO: does this rate need to scale with sequence length?
           # Compute bin sampling bias distribution
           Hp = H[ , , currWalker]
-          Hp[HIdx] = Hp[HIdx]-min(Hp[HIdx])+1
+          Hp[prevHIdx] = Hp[prevHIdx]-min(Hp[prevHIdx])+1
           cts = c(Hp)
           cts[cts>0] = sum(cts)/cts[cts>0]
           cts = cts/sum(cts)
@@ -143,7 +142,7 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
         # Compute new cost and mutation indexes
         IEn = round((En-Emin)/energy.div.size)+1
         IMn = Mn+1
-
+        
         # Begin by padding the H and S matrices with mutation range increases
         if (IMn > mDivs) {
           # Update and add rows to opt.seq
@@ -203,15 +202,15 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
         H[IM0[currWalker], IE0[currWalker], currWalker] = H[IM0[currWalker], IE0[currWalker], currWalker] + 1
       }
     }
-
+    
     # Monitor and terminate if all energy bins have been visited an even number of times
     for (currWalker in 1:nWalkers) {
       currH = H[,,currWalker][prevHIdx]
-      walker.monitors[currWalker,] = c(sum(currH==0), min(currH), mean(currH), sd(currH))
+      walker.monitors[currWalker,] = c(sum(currH==0), min(currH[currH>0]), mean(currH[currH>0]), sd(currH[currH>0]))
     }
     iters = iters + testIterations
     globalIterations = globalIterations + testIterations*nWalkers
-
+    
     # Check to see if the number of empty bins changes.
     if (sum(prevHIdx)==prevCycleActiveBins && 
         sum(abs(prevCycleEmptyBins-walker.monitors[,1]))==0 &&
@@ -223,19 +222,21 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
     prevCycleActiveBins = sum(prevHIdx)
     prevCycleEmptyBins  = walker.monitors[,1]
     prevCycleMinBins    = walker.monitors[,2]
-
+    
     # Print cycle update
-    cat(paste0("Total Iterations: ", globalIterations, "; active bins: ", sum(prevHIdx), 
-               "; empty bins: ", sum(HIdx[prevHIdx]==0), "; Emin-Emax: ", Emin, "-", Emax, "; Hit Counter: ", hit.counter,"\n"))
-    cat("Number Empty: ")
-    print(walker.monitors[,1])
-    cat("Min:          ")
-    print(walker.monitors[,2])
-    # cat("Mean:         ")
-    # print(walker.monitors[,3])
-    # cat("SD:           ")
-    # print(walker.monitors[,4])
-        
+    if (globalIterations %% 5E5 == 0) {
+      cat(paste0("Total Iterations: ", globalIterations, "; active bins: ", sum(prevHIdx), 
+                 "; empty bins: ", sum(HIdx[prevHIdx]==0), "; Emin-Emax: ", Emin, "-", Emax, "; Hit Counter: ", hit.counter,"\n"))
+      cat("Number Empty: ")
+      print(walker.monitors[,1])
+      cat("Min:          ")
+      print(walker.monitors[,2])
+      # cat("Mean:         ")
+      # print(walker.monitors[,3])
+      # cat("SD:           ")
+      # print(walker.monitors[,4])
+    }
+    
     if (all(walker.monitors[,"Min"]>minCount) && all(walker.monitors[,"Min"] >= tol*walker.monitors[,"Mean"]) && iters>minIters) {
       # Converged 
       loops = loops + 1
@@ -300,7 +301,17 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
   }
   opt.seqs$OptimalSeq = unlist(opt.seqs$OptimalSeq)
   print(opt.seqs)
-  return(opt.seqs)
+  
+  # Convert last.seq into a matrix
+  example.seqs = matrix(data="NA", nrow = nrow(HIdx), ncol = ncol(HIdx))
+  for (y in 1:nrow(HIdx)) {
+    for (x in 1:ncol(HIdx)) {
+      if (HIdx[y,x]) {
+        example.seqs[y,x] = convertSequence(last.seq[y,x,])
+      }
+    }
+  }
+  return(list(MaximalSequences=opt.seqs, SequenceExamples=example.seqs))
 }
 
 # Sequence optimizer. REQUIRES a seed sequence. All scores are automatically adjusted to accomodate the TOTAL sequence score
@@ -350,129 +361,3 @@ optimal.sequence = function(..., model.list = NA, cost.function, seq.len = NA, s
   output = wang.landau(score.object, start.seq, cost.function, verbose = verbose)
   return(output)
 }
-
-#############################################################
-### Optimize a variety of sequences in different settings ###
-#############################################################
-# Load all models
-input.models = all.models[[2]][[2]]
-model.names = as.character(all.models[[1]]$Protein)
-model.names[all.models[[1]]$Dataset=="Dimer"] = paste0("Exd", model.names[all.models[[1]]$Dataset=="Dimer"])
-names(input.models) = model.names
-# Need to adjust the energy scale of all models so that the energy of the maximum sequence is 0. This allows setting a 'nonspecific binding' limit
-for (i in 1:length(input.models)) {
-  if (all.models[[1]]$Dataset[i]=="Dimer" || i %in% c(17, 18)) {
-    input.models[[i]] = input.models[[i]][[1]]
-  }
-  energy.adjustment = log(max.seq(all.models[[2]], i, 1)$MaxAffinity)
-  input.models[[i]]$NB[1:4] = input.models[[i]]$NB[1:4] - energy.adjustment
-}
-
-# Remove UbxIa
-input.models = input.models[-grep("UbxIa", names(input.models))]
-
-# evaluate all sequences and create plots
-genome.profile = function(sequence) {
-  info = all.models[[1]]
-  for (i in 1:nrow(info)) {
-    p = plot.score.genome(genomicSequence = DNAString(sequence), fits = all.models[[2]], index = i, mode = 1)
-    print(p + ggtitle(paste0(info$Protein[i], " ", info$Dataset[i])))
-  }
-}
-
-# Max distance
-cost.fun.2 = function(scored.list, base.scores) {
-  top.aff.prot1 = exp(max(scored.list[[1]])-max(base.scores[[1]]))
-  
-  # Important to keep the affinity of the first protein the same
-  cost = 0
-  if (top.aff.prot1>=1) {
-    cost = log10(top.aff.prot1)
-  } else {
-    cost = log10(top.aff.prot1)*10
-  }
-  min.score.ratio = Inf
-  for (i in 2:length(scored.list)) {
-    min.score.ratio = min(min.score.ratio, sum(exp(base.scores[[i]]))/sum(exp(scored.list[[i]])))
-  }
-  if (min.score.ratio>=1) {
-    cost = cost + log10(min.score.ratio)
-  } else {
-    cost = cost + log10(min.score.ratio)*10
-  }
-  return(max(cost, 0)*10)
-}
-
-# Max distance + bonus for significant improvement
-cost.fun.3 = function(scored.list, base.scores) {
-  top.aff.prot1 = exp(max(scored.list[[1]])-max(base.scores[[1]]))
-  
-  # Important to keep the affinity of the first protein the same
-  if (top.aff.prot1>=1) {
-    cost = log10(top.aff.prot1)*10
-  } else {
-    cost = (log10(top.aff.prot1) - 1)*100
-  }
-  sum.score.ratio = Inf
-  max.score.ratio = Inf
-  for (i in 2:length(scored.list)) {
-    sum.ratio = sum(exp(base.scores[[i]]))/sum(exp(scored.list[[i]]))
-    max.ratio = exp(max(base.scores[[i]])-max(scored.list[[i]]))
-    if (sum.ratio>=10) {
-      cost = cost + 1
-    }
-    if (max.ratio>=10) {
-      cost = cost + 1
-    }
-    sum.score.ratio = min(sum.score.ratio, sum.ratio)
-    max.score.ratio = min(max.score.ratio, max.ratio)
-  }
-  if (sum.score.ratio>=1) {
-    cost = cost + log10(sum.score.ratio)*10
-  } else {
-    cost = cost + (log10(sum.score.ratio) - 1)*100
-  }
-  if (max.score.ratio>=1) {
-    cost = cost + log10(max.score.ratio)*10
-  } else {
-    cost = cost + (log10(max.score.ratio) - 1)*100
-  }
-  # 'Regularize' the negative cost space. We obviously dont want these solutions, 
-  # but it will compress the output and still allow some degree of exploration
-  if (cost<0) {
-    cost = -log2(-cost)*2
-  }
-  return(cost)
-}
-
-# simple cost function: Maintain/improve the affinity of the first protein, drop the affinity of the rest
-cost.fun = function(scored.list, base.scores) {
-  cost = log(sum(exp(scored.list[[1]]))/sum(exp(base.scores[[1]])))
-  for (i in 2:length(scored.list)) {
-    cost = cost + log(sum(exp(base.scores[[i]]))/sum(exp(scored.list[[i]])))
-  }
-  return(cost)
-}
-
-# Optimize the fkh250 sequence
-fkh250 = "CCTCGTCCCACAGCTGGCGATTAATCTTGACATTGAG"
-# Loop over all proteins
-output.profiles = list()
-# for (i in 1:length(input.models)) {
-#   # Select a single model
-#   idx = 1:length(input.models)
-#   idx = c(i, idx[-i])
-#   curr.list = input.models[idx]
-#   cat(paste0("Optimizing ", names(curr.list)[1], ":\n"))
-#   output.profiles[[i]] = optimal.sequence(model.list = curr.list, cost.function = cost.fun, seed.seq = fkh250, verbose = TRUE)
-# }
-
-i=14
-# Select a single model
-idx = 1:length(input.models)
-idx = c(i, idx[-i])
-curr.list = input.models[idx]
-cat(paste0("Optimizing ", names(curr.list)[1], ":\n"))
-out3 = optimal.sequence(model.list = curr.list, cost.function = cost.fun.3, seed.seq = fkh250, verbose = TRUE)
-out2 = optimal.sequence(model.list = curr.list, cost.function = cost.fun.2, seed.seq = fkh250, verbose = TRUE)
-out1 = optimal.sequence(model.list = curr.list, cost.function = cost.fun, seed.seq = fkh250, verbose = TRUE)

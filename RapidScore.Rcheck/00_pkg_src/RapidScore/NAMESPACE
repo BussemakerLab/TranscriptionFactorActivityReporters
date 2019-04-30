@@ -1,3 +1,0 @@
-useDynLib(RapidScore)
-exportPattern("^[^\\.]")
-import(Rcpp)
