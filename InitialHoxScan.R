@@ -124,4 +124,5 @@ idx = 1:length(input.models)
 idx = c(i, idx[-i])
 curr.list = input.models[idx]
 cat(paste0("Optimizing ", names(curr.list)[1], ":\n"))
+cost.fun.out = optimal.sequence(model.list = curr.list, cost.function = cost.fun, seed.seq = fkh250, verbose = TRUE)
 max.improvement.out = optimal.sequence(model.list = curr.list, cost.function = max.improvement, seed.seq = fkh250, verbose = TRUE)

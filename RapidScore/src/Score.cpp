@@ -25,6 +25,7 @@ public:
   void add(Rcpp::NumericVector, Rcpp::Nullable<Rcpp::NumericVector>);
   void print();
   Rcpp::List scoreBulk(Rcpp::IntegerVector);
+  Rcpp::List scoreBulkChar(Rcpp::StringVector);
 private:
   int nModels;
   double affFloor;
@@ -163,6 +164,27 @@ Rcpp::List RapidScore::scoreBulk(Rcpp::IntegerVector seq) {
   return(output);
 }
 
+//Rcpp::List
+Rcpp::List RapidScore::scoreBulkChar(Rcpp::StringVector seq) {
+  Rcpp::IntegerVector seqInt(seq[0].size());
+
+  // First convert sequence into an integer vector
+  for (int i=0; i<seq[0].size(); i++) {
+    if (seq[0][i]=='A') {
+      seqInt[i] = 0;
+    } else if (seq[0][i]=='C') {
+      seqInt[i] = 1;
+    } else if (seq[0][i]=='G') {
+      seqInt[i] = 2;
+    } else {
+      seqInt[i] = 3;
+    }
+  }
+
+  // Return scored sequence
+  return(scoreBulk(seqInt));
+}
+
 RCPP_MODULE(rapidscoremodule){
   Rcpp::class_<RapidScore>( "RapidScore" )
   .constructor("documentation for default constructor")
@@ -171,5 +193,6 @@ RCPP_MODULE(rapidscoremodule){
   .method( "add", &RapidScore::add, "documentation for adding a model")
   .method( "print", &RapidScore::print, "documentation for printing all betas (diagnostic)")
   .method( "scoreBulk", &RapidScore::scoreBulk, "documentation for scoring a sequence using multiple models")
+  .method( "scoreBulkChar", &RapidScore::scoreBulkChar, "documentation for scoring a sequence using multiple models")
   ;
 }

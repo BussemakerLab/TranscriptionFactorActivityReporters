@@ -5,16 +5,19 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "2747940283",
+    "hash" : "321279040",
     "id" : "7DFFF158",
-    "lastKnownWriteTime" : 1556653957,
-    "last_content_update" : 1556653957,
+    "lastKnownWriteTime" : 1557197025,
+    "last_content_update" : 1616763613640,
     "path" : "~/Documents/Research/SequenceOptimization/RapidScore/src/Score.cpp",
     "project_path" : "src/Score.cpp",
     "properties" : {
-        "cursorPosition" : "24,15",
-        "scrollLine" : "0"
+        "cursorPosition" : "99,13",
+        "scrollLine" : "91"
     },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
     "relative_order" : 2,
     "source_on_save" : false,
     "source_window" : "",

@@ -224,7 +224,7 @@ wang.landau = function(score.object, start.seq, cost.function, verbose=TRUE) {
     prevCycleMinBins    = walker.monitors[,2]
     
     # Print cycle update
-    if (globalIterations %% 5E5 == 0) {
+    if (globalIterations %% 5E3 == 0) {
       cat(paste0("Total Iterations: ", globalIterations, "; active bins: ", sum(prevHIdx), 
                  "; empty bins: ", sum(HIdx[prevHIdx]==0), "; Emin-Emax: ", Emin, "-", Emax, "; Hit Counter: ", hit.counter,"\n"))
       cat("Number Empty: ")

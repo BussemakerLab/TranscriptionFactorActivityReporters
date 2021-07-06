@@ -12,9 +12,12 @@
     "path" : "~/Documents/Research/SequenceOptimization/RapidScore/DESCRIPTION",
     "project_path" : "DESCRIPTION",
     "properties" : {
-        "cursorPosition" : "8,12",
+        "cursorPosition" : "8,0",
         "scrollLine" : "0"
     },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
     "relative_order" : 1,
     "source_on_save" : false,
     "source_window" : "",
