@@ -1,0 +1,28 @@
+TF;Spacing (between TF motifs);Distance (TF motif 1 to minimal promoter);Minimal Promoter;Background;Barcode
+Stat3;5bp;10bp;minP;1;1
+Zfx;10bp;21bp;hBGm (human beta-globin minimal);2;2
+Esrrb;;;mCMV;3;3
+Smad1;;;;;4
+Smad1_v2;;;;;5
+Smad4;;;;;
+Klf4;;;;;
+Tcfcp2l1;;;;;
+Gbx2;;;;;
+Zfp42;;;;;
+Rara::Rxra;;;;;
+Neurog2;;;;;
+Pax6;;;;;
+Rbpj;;;;;
+Sp1;;;;;
+Gli1;;;;;
+Irf3;;;;;
+Irx3;;;;;
+Otx1;;;;;
+Creb1;;;;;
+Nr3c1(GR);;;;;
+Nfe2l2;;;;;
+Elk1;;;;;
+Trp53;;;;;
+Nfkb1;;;;;
+Tcf7l2;;;;;
+Homez;;;;;
