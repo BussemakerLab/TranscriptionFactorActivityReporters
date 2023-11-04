@@ -1,0 +1,5 @@
+mt20191008_TF_selection_overview.docx:		Initial list of TFs considered to design reporters to study in mouse ES cells
+mt20191119_TFs_list_updated.csv:		Second, updated list of TFs with corresponding motif and CIS-BP Motif ID
+mt20191119_oligo_pool (3).fasta:		Draft .fasta file of the TF reporter oligo library for the 30 TFs in the updated TF list
+Example_oligo.dna:				Snapgene file showing how the oligos are built up
+mt20191119_oligo_design_parameters.csv:		Lists all parameters used in the oligo design, which explains the naming of the sequences in the .fasta file
