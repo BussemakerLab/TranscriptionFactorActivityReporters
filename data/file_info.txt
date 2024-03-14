@@ -16,3 +16,6 @@ Lists all parameters used in the oligo design, which explains the naming of the 
 mt20200619_oligo_pool_deep.fasta:
 
 mt20210208_oligo_pool_deep_RE_only.fasta:
+
+fit.Zhang2017.GR.7297.json (Dec 2019):
+ProBound GR fit 7297 used to create optimized sequences. This fit is derived from data generated as part of the Zhang 2017 paper.
