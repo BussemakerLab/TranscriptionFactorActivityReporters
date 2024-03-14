@@ -1,0 +1,14 @@
+factor_info.xlsx (Nov 2019):	
+File sent by Chaitanya to Max to help him design an initial set of promoters to explore (Nov 2019)	
+
+fit.Zhang2017.GR.7297.json (Dec 2019):
+
+FullSequences_v1.xlsx (Jan 2020):
+
+p53_GR_scorer.R:
+
+p53_GR_v1.R:
+
+p53scores.tsv:
+
+unknown_code.R:
