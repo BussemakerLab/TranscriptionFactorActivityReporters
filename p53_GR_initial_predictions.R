@@ -32,6 +32,7 @@ vals = log(vals$Sum)
 df = melt(vals, value.name="Score", varnames = c("Mutations", "Protein"))
 df$Mutations = factor(rep(as.character(1:nrow(seqs)-1), ncol(seqs)), levels=as.character(1:nrow(seqs)-1))
 df$ddG = factor(rep(rev(as.character(-1*(1:ncol(seqs)-1))), each=nrow(seqs)), levels=rev(as.character(-1*(1:ncol(seqs)-1))))
+df$Seqs = as.character(seqs)
 
 ggplot(df, aes_string(x="Mutations", y="ddG")) + 
   geom_tile(aes(fill=Score)) + 
@@ -75,6 +76,7 @@ vals = log(vals$Sum)
 df = melt(vals, value.name="Score", varnames = c("Mutations", "Protein"))
 df$Mutations = factor(rep(as.character(1:nrow(seqs)-1), ncol(seqs)), levels=as.character(1:nrow(seqs)-1))
 df$ddG = factor(rep(rev(as.character(-.5*(1:ncol(seqs)-1))), each=nrow(seqs)), levels=rev(as.character(-.5*(1:ncol(seqs)-1))))
+df$Seqs = as.character(seqs)
 
 ggplot(df, aes_string(x="Mutations", y="ddG")) + 
   geom_tile(aes(fill=Score)) + 
