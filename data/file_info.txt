@@ -10,6 +10,9 @@ Draft .fasta file of the TF reporter oligo library for the 30 TFs in the updated
 Example_oligo.dna (Nov 2019):
 Snapgene file showing how the oligos are built up
 
+factor_info.xlsx (Nov 2019):	
+File sent by Chaitanya to Max to help him design an initial set of promoters to explore (Nov 2019)	
+
 mt20191119_oligo_design_parameters.csv (Nov 2019):
 Lists all parameters used in the oligo design, which explains the naming of the sequences in the .fasta file
 
