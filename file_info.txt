@@ -5,7 +5,7 @@ FullSequences_v1.xlsx (Jan 2020): some manually selected sequences from run in j
 
 p53_GR_scorer.R:
 
-p53_GR_initial_predictions.R (Jan 2020): 
+p53_GR_initial_predictions.R (Jan 2020): R file that uses the sequence optimization class to build a set of sequences with varying affinity and number of mutations
 
 p53scores.tsv:
 

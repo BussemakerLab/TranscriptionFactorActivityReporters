@@ -13,9 +13,9 @@ Snapgene file showing how the oligos are built up
 mt20191119_oligo_design_parameters.csv (Nov 2019):
 Lists all parameters used in the oligo design, which explains the naming of the sequences in the .fasta file
 
-mt20200619_oligo_pool_deep.fasta:
+mt20200619_oligo_pool_deep.fasta (Feb 2021): same sequences as in mt20210208_oligo_pool_deep_RE_only.fasta, but including the whole reporter (inclusive of the upstream adapter sequence, downstream minimal promoter, barcode and adapter)
 
-mt20210208_oligo_pool_deep_RE_only.fasta:
+mt20210208_oligo_pool_deep_RE_only.fasta (Feb 2021): contains all unique response elements (excluding primer adapters, minimal promoters, barcodes, etc.) for the designed P53 and GR reporter sequences used in the assay
 
 fit.Zhang2017.GR.7297.json (Dec 2019):
 ProBound GR fit 7297 used to create optimized sequences. This fit is derived from data generated as part of the Zhang 2017 paper.
