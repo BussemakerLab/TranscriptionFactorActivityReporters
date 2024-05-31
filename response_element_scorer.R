@@ -22,11 +22,11 @@ p53.scorer$add(p53.model$p53$NB, p53.model$p53$DB)
 # Score response elements and full sequences
 seqs = dplyr::filter(seqs.RE, grepl("Trp53", Name))
 scores = cbind(seqs, SumAffinity=sapply(seqs$Seq, FUN=function(x) sum(exp(p53.scorer$scoreBulkChar(x)[[1]]))))
-write.table(x = scores, file = "p53scores_RE.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
+write.table(x = scores, file = "out/p53scores_RE.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
 
 seqs = dplyr::filter(seqs.full, grepl("Trp53", Name))
 scores = cbind(seqs, SumAffinity=sapply(seqs$Seq, FUN=function(x) sum(exp(p53.scorer$scoreBulkChar(x)[[1]]))))
-write.table(x = scores, file = "p53scores_full.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
+write.table(x = scores, file = "out/p53scores_full.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
 
 ###################
 ### GR Analysis ###
@@ -38,8 +38,8 @@ GR.scorer$add(GR.model$GR$NB, GR.model$GR$DB)
 # Score response elements and full sequences
 seqs = dplyr::filter(seqs.RE, grepl("Gr", Name))
 scores = cbind(seqs, SumAffinity=sapply(seqs$Seq, FUN=function(x) sum(exp(p53.scorer$scoreBulkChar(x)[[1]]))))
-write.table(x = scores, file = "GRscores_RE.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
+write.table(x = scores, file = "out/GRscores_RE.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
 
 seqs = dplyr::filter(seqs.full, grepl("Gr", Name))
 scores = cbind(seqs, SumAffinity=sapply(seqs$Seq, FUN=function(x) sum(exp(p53.scorer$scoreBulkChar(x)[[1]]))))
-write.table(x = scores, file = "GRscores_full.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
+write.table(x = scores, file = "out/GRscores_full.tsv", sep = "\t", col.names = T, quote = F, row.names = F)
