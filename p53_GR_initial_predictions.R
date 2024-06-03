@@ -100,4 +100,4 @@ GR.seqs = data.frame(Seq = c(seqs[1, 24], seqs[2,20], seqs[5, 16]),
                      Affinity=exp(c(vals[1, 24], vals[2,20], vals[5, 16])))
 
 # Store actual condensed sequence outs into RData file
-save(p53.cost.fun.out, GR.cost.fun.out, p53.seqs, GR.seqs, file = "RData/p53_GR_initial_predictions.RData")
+save(p53.cost.fun.out, GR.cost.fun.out, p53.seqs, GR.seqs, file = "out/p53_GR_initial_predictions.RData")
