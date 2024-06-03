@@ -1,7 +1,0 @@
-factor_info.xlsx (Nov 2019):	
-File sent by Chaitanya to Max to help him design an initial set of promoters to explore (Nov 2019)	
-
-p53scores/GRscores: files containing the outputs from running response_element_scorer.R
-
-factor_info.xlsx (Nov 2019):	
-File sent by Chaitanya to Max to help him design an initial set of promoters to explore (Nov 2019)	 
