@@ -17,7 +17,6 @@ This repository contains the code used to design and optimize the reporters in T
   * `factor_info.xlsx` contains manually-modified motifs from `mt20191119_TFs_list_updated.csv` that are designed to eliminate binding for the given transcription factor. __For new publication__
   * `GR/p53scores_RE/_full.tsv` files output by `response_element_scorer.R` that contain the GR/p53 affinity scores for sequences in `mt20210208_oligo_pool_deep_RE_only.fasta`/`mt20200619_oligo_pool_deep.fasta` 
   * `p53_GR_initial_predictions.RData` RData files containing the outputs of the sequence optimization runs
-  * `FullSequences_v1.xslx` contains the optimized sequences running to create an affinity ladder for p53/GR.
 
 ## Requirements
 R $`\geq `$ 4.2.1
