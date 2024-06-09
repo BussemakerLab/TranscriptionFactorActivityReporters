@@ -1,5 +1,7 @@
-# TP53 Reporter Optimization
-This repository contains the code used to design and optimize the reporters in Trauernicht M, et al. (2023) Optimisation of TP53 reporters by systematic dissection of synthetic TP53 response elements. 	Nucleic Acids Research 51(18):9690-9702 (https://academic.oup.com/nar/article/51/18/9690/7256891).
+# Trancription Factor Activity Reporters
+This repository contains the code used to design and optimize the transcription factor activity reporters in the following studies: 
+* Trauernicht M, et al. (2023) Optimisation of TP53 reporters by systematic dissection of synthetic TP53 response elements. Nucleic Acids Research 51(18):9690-9702 (https://academic.oup.com/nar/article/51/18/9690/7256891)
+* Trauernicht M, et al. Optimized reporters for multiplexed detection of transcription factor activity (submitted)
 
 ## Contents
 * `p53_GR_initial_predictions.R` Uses the RapidScore library and the associated sequence optimization code to build a set of sequences with varying affinity and number of mutations
